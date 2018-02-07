@@ -1,0 +1,2 @@
+# CompSem
+Computational Semantics Project
