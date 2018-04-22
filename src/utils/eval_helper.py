@@ -20,7 +20,7 @@ def knn_accuracy_from_matrix(F_pred, F_gold, k=1, src_words=None, tgt_words=None
                 print("System:")
             for j in np.argsort(-F_pred[i,:]).tolist()[:k]:
                 if verbose:
-                    print 'current j', j, F_pred.shape
+                    print('current j', j, F_pred.shape)
                     print("\t" + tgt_words[j])
                 if F_gold[i,j] == 1:
                     tp += 1.0
