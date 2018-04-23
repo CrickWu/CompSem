@@ -12,14 +12,15 @@ import utils.eval_helper
 import utils.word2gm_loader
 
 # insert this to the top of your scripts (usually main.py)
-import sys, warnings, traceback, torch, os
-def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
-    sys.stderr.write(warnings.formatwarning(message, category, filename, lineno, line))
-    traceback.print_stack(sys._getframe(2))
-warnings.showwarning = warn_with_traceback; warnings.simplefilter('always', UserWarning);
-torch.utils.backcompat.broadcast_warning.enabled = True
-torch.utils.backcompat.keepdim_warning.enabled = True
+#import sys, warnings, traceback, torch, os
+#def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+#    sys.stderr.write(warnings.formatwarning(message, category, filename, lineno, line))
+#    traceback.print_stack(sys._getframe(2))
+#warnings.showwarning = warn_with_traceback; warnings.simplefilter('always', UserWarning);
+#torch.utils.backcompat.broadcast_warning.enabled = True
+#torch.utils.backcompat.keepdim_warning.enabled = True
 
+import os
 import time
 from tqdm import tqdm
 import logging
@@ -151,7 +152,8 @@ def dist_dot(X_mus, X_sigs, X_alphas,
     for _i in range(num_mix):
         for _j in range(num_mix):
             energy += mix1[_i]*mix2[_j]*torch.exp(partial_energies[_i,_j] - max_partial_energy)
-    log_energy = max_partial_energy + np.log(energy)
+    log_energy = max_partial_energy + torch.log(energy)
+    #print('log_energy', type(log_energy), log_energy.size())
     return log_energy
 
 def update_U(X_mus, X_sigs, X_alphas,
@@ -164,9 +166,12 @@ def update_U(X_mus, X_sigs, X_alphas,
     scores = U.new(M, N).zero_() #
     for  m in range(M):
         for n in range(N):
-            scores[m, n] = dist_dot(X_mus, X_sigs, X_alphas,
-                                    Y_mus, Y_sigs, Y_alphas,
-                                    V, n, m)
+            tmp = dist_dot(X_mus, X_sigs, X_alphas, Y_mus, Y_sigs, Y_alphas, V, n, m).data.cpu()
+            scores[m, n] = tmp[0]
+            #scores[m, n] = dist_dot(X_mus, X_sigs, X_alphas,
+            #                        Y_mus, Y_sigs, Y_alphas,
+            #                        V, n, m).data.cpu()
+            #exit(0)
     sorted_scores, indices = torch.max(scores, dim=1, keepdim=False) # 1 x m
     # indices = indices.cpu()
     # print type(range_n), type(indices)
@@ -181,6 +186,7 @@ def main(args, logger):
     args.cuda = args.gpu is not None
     if args.cuda:
         torch.cuda.set_device(args.gpu)
+
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.rand_seed)
     np.random.seed(args.rand_seed)
@@ -227,7 +233,7 @@ def main(args, logger):
         X_alphas = Variable(X_alphas.cuda())
         Y_alphas = Variable(Y_alphas.cuda())
         # range_n = range_n.cuda()
-        # U = Variable(U.cuda())
+        #U = Variable(U.cuda())
         V = Variable(V.cuda())
 
     # forward

@@ -11,7 +11,10 @@ import pandas as pd
 #from ggplot import * # TODO - make this compatible
 
 # Retrict to CPU only
-os.environ["CUDA_VISIBLE_DEVICES"]=""
+#os.environ["CUDA_VISIBLE_DEVICES"]=""
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4
 
 class Word2GM(object):
     def __init__(self, save_path, ckpt_file=None, verbose=True):
@@ -20,7 +23,7 @@ class Word2GM(object):
         self.ckpt_file = ckpt_file
         self.logdir = save_path
         with tf.Graph().as_default() as g:
-            with tf.Session(graph=g) as session:
+            with tf.Session(graph=g, config=config) as session:
                 self.save_path = save_path
                 self.session = session
                 self.load_model(verbose)
